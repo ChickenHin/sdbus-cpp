@@ -56,7 +56,7 @@ jobs:
     - name: verify
       run: |
         sudo cmake --build _build --target install
-        ctest --output-on-failure --test-dir _build
+        ctest --output-on-failure --test-dir _build -V
     # - name: pack
     #   if: matrix.build == 'shared-libsystemd'
     #   run: |
@@ -110,4 +110,4 @@ jobs:
           cmake --install _build
           pkg install -y dbus
           service dbus onestart
-          ctest --output-on-failure --test-dir _build
+          ctest --output-on-failure --test-dir _build -V
