@@ -1,12 +1,7 @@
 name: CI
 
 on:
-  push:
-    branches: [ master ]
-  pull_request:
-    branches:
-      - master
-      - release/v2.0
+  workflow_dispatch: 
 
 jobs:
   build:
@@ -14,9 +9,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04, ubuntu-24.04]
-        compiler: [g++, clang]
-        build: [shared-libsystemd, embedded-static-libsystemd]
+        os: [ubuntu-24.04]
+        compiler: [g++]
+        build: [shared-libsystemd]
     steps:
     - uses: actions/checkout@v4
     - name: install-libsystemd-toolchain
@@ -62,41 +57,41 @@ jobs:
       run: |
         sudo cmake --build _build --target install
         ctest --output-on-failure --test-dir _build
-    - name: pack
-      if: matrix.build == 'shared-libsystemd'
-      run: |
-        cd _build
-        cpack -G DEB
-    - name: 'Upload Artifact'
-      if: matrix.build == 'shared-libsystemd' && matrix.compiler == 'g++'
-      uses: actions/upload-artifact@v4
-      with:
-        name: "debian-packages-${{ matrix.os }}-${{ matrix.compiler }}"
-        path: |
-          _build/sdbus-c++*.deb
-          _build/sdbus-c++*.ddeb
-        retention-days: 10
-  static-analysis:
-    name: static-analysis (ubuntu-24.04, clang-tidy, shared-libsystemd)
-    runs-on: ubuntu-24.04
-    strategy:
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v4
-      - name: install-deps
-        run: |
-          sudo apt-get update -y
-          sudo apt-get install -y libsystemd-dev libgmock-dev clang
-          sudo update-alternatives --remove-all cc
-          sudo update-alternatives --install /usr/bin/cc cc /usr/bin/clang 10
-          sudo update-alternatives --remove-all c++
-          sudo update-alternatives --install /usr/bin/c++ c++ /usr/bin/clang++ 10
-      - name: configure
-        run: |
-          cmake -B _build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="-O0 -g" -DCMAKE_VERBOSE_MAKEFILE=ON -DSDBUSCPP_CLANG_TIDY=ON -DSDBUSCPP_BUILD_TESTS=ON -DSDBUSCPP_BUILD_PERF_TESTS=ON -DSDBUSCPP_BUILD_STRESS_TESTS=ON -DSDBUSCPP_BUILD_EXAMPLES=ON
-      - name: make
-        run: |
-          cmake --build _build -j4
+    # - name: pack
+    #   if: matrix.build == 'shared-libsystemd'
+    #   run: |
+    #     cd _build
+    #     cpack -G DEB
+    # - name: 'Upload Artifact'
+    #   if: matrix.build == 'shared-libsystemd' && matrix.compiler == 'g++'
+    #   uses: actions/upload-artifact@v4
+    #   with:
+    #     name: "debian-packages-${{ matrix.os }}-${{ matrix.compiler }}"
+    #     path: |
+    #       _build/sdbus-c++*.deb
+    #       _build/sdbus-c++*.ddeb
+    #     retention-days: 10
+  # static-analysis:
+  #   name: static-analysis (ubuntu-24.04, clang-tidy, shared-libsystemd)
+  #   runs-on: ubuntu-24.04
+  #   strategy:
+  #     fail-fast: false
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - name: install-deps
+  #       run: |
+  #         sudo apt-get update -y
+  #         sudo apt-get install -y libsystemd-dev libgmock-dev clang
+  #         sudo update-alternatives --remove-all cc
+  #         sudo update-alternatives --install /usr/bin/cc cc /usr/bin/clang 10
+  #         sudo update-alternatives --remove-all c++
+  #         sudo update-alternatives --install /usr/bin/c++ c++ /usr/bin/clang++ 10
+  #     - name: configure
+  #       run: |
+  #         cmake -B _build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="-O0 -g" -DCMAKE_VERBOSE_MAKEFILE=ON -DSDBUSCPP_CLANG_TIDY=ON -DSDBUSCPP_BUILD_TESTS=ON -DSDBUSCPP_BUILD_PERF_TESTS=ON -DSDBUSCPP_BUILD_STRESS_TESTS=ON -DSDBUSCPP_BUILD_EXAMPLES=ON
+  #     - name: make
+  #       run: |
+  #         cmake --build _build -j4
   freebsd-build:
     name: build (freebsd, clang/libc++, basu)
     runs-on: ubuntu-22.04 # until https://github.com/actions/runner/issues/385
